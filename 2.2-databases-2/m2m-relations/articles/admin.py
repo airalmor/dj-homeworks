@@ -1,8 +1,36 @@
 from django.contrib import admin
+from django.core.exceptions import ValidationError
+from django.forms import BaseInlineFormSet
+from .models import Article, Scope, Tag
 
-from .models import Article
+
+class ScopeInlineFormset(BaseInlineFormSet):
+    def clean(self):
+        main_tag_present = False
+        for form in self.forms:
+            if form.cleaned_data.get('is_main') and main_tag_present:
+                raise ValidationError('Тут всегда ошибка')
+            elif form.cleaned_data.get('is_main') and not main_tag_present:
+                main_tag_present = True
+        if not main_tag_present:
+            raise ValidationError('Тут всегда ошибка 2')
+        return super().clean()  # вызываем базовый код переопределяемого метода
+
+
+class ScopeInline(admin.TabularInline):
+    model = Scope
+    extra = 1
+    formset = ScopeInlineFormset
 
 
 @admin.register(Article)
 class ArticleAdmin(admin.ModelAdmin):
-    pass
+    list_display = ['id', 'title', 'published_at']
+    list_filter = ['title', 'published_at']
+    inlines = [ScopeInline, ]
+
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name']
+    list_filter = ['name']
