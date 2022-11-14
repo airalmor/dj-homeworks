@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from rest_framework import serializers
 
 from advertisements.models import Advertisement
@@ -23,7 +24,7 @@ class AdvertisementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Advertisement
         fields = ('id', 'title', 'description', 'creator',
-                  'status', 'created_at', )
+                  'status', 'created_at',)
 
     def create(self, validated_data):
         """Метод для создания"""
@@ -41,5 +42,12 @@ class AdvertisementSerializer(serializers.ModelSerializer):
         """Метод для валидации. Вызывается при создании и обновлении."""
 
         # TODO: добавьте требуемую валидацию
-
+        creating_user = self.context["request"].user.id
+        if not creating_user:
+            raise ValidationError('Error:only for registered users')
+        if self.context['request'].method == 'PATCH' and data.get('status') is not 'CLOSED':
+            return data
+        user_open_adv_limit = len(Advertisement.objects.filter(creator=creating_user, status='OPEN'))
+        if user_open_adv_limit > 10:
+            raise ValidationError('You have reached limit of 10 maximum open advertisements')
         return data

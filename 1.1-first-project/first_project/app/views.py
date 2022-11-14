@@ -1,3 +1,4 @@
+from django.core.paginator import Paginator
 from django.http import HttpResponse
 from django.shortcuts import render, reverse
 
@@ -31,3 +32,29 @@ def workdir_view(request):
     context = {'files': files}
     return render(request, template_name, context)
     raise NotImplemented
+
+def hello(request):
+    name = request.GET.get('name')
+    return HttpResponse(f'Hello,  {name}')
+
+def summa(request,a,b):
+    result = a + b
+    return HttpResponse(f'Summa ={result} ')
+
+
+def demo(request):
+    context = {
+        'test': 'Test Hello!?',
+        'data': [1,5,8,12],
+    }
+    return render(request,'demo1.html',context)
+
+CONTENT = [str(i) for i in range(10000)]
+
+def pagi(request):
+    page_number = int(request.GET.get('page',1))
+    paginator = Paginator(CONTENT,10)
+    page =  paginator.get_page(page_number)
+    context = {'page': page}
+    return render(request,'pagi.html',context)
+
